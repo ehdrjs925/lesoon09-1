@@ -382,3 +382,35 @@ dot_lines = [
 leaf_total = 0
 leaf_no_count = 0
 actually_asked = set()
+for node in range(tree_structure.node_count):
+    total = node_counts[node]
+    positives = node_positives[node]
+    rate = positives / total * 100 if total else 0
+    left_child = int(tree_structure.children_left[node])
+    right_child = int(tree_structure.children_right[node])
+    is_leaf = left_child == right_child
+
+    if is_leaf:
+        leaf_total += 1
+        answer = majority_prediction(node)
+        if answer == 0:
+            leaf_no_count += 1
+        title = f"답: {CLASS_NAMES[answer]}"
+        color = "#DFF3E5" if answer == 0 else "#FBE0DF"
+    else:
+        feature = selected[int(tree_structure.feature[node])]
+        actually_asked.add(feature)
+        threshold = tree_structure.threshold[node]
+        title = f"질문: {FEATURE_NAMES[feature]} ≤ {threshold:.2f}?"
+        color = "#E8EFFB"
+
+    label_text = f"{title}\n훈련 {total:,}명 | 실제 뇌졸중 {positives:,}명 ({rate:.1f}%)"
+    dot_lines.append(f'n{node} [label="{dot_escape(label_text)}", fillcolor="{color}"];')
+    if not is_leaf:
+        dot_lines.append(f'n{node} -> n{left_child} [label="예"];')
+        dot_lines.append(f'n{node} -> n{right_child} [label="아니요"];')
+
+dot_lines.append("}")
+st.graphviz_chart("\n".join(dot_lines), use_container_width=True)
+
+st.write(f"**답을 내리는 마지막 마디:** 총 {leaf_total}칸")
